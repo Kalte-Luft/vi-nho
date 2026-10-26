@@ -31,3 +31,7 @@ Camera hóa đơn giấy thật, chọn từ thư viện và airplane mode chưa
 Ảnh bằng chứng: [review](week8-screenshots/review.png), [nút lưu chưa xác nhận](week8-screenshots/confirmation.png), [light](week8-screenshots/light.png), [dark](week8-screenshots/dark.png), [mở lại khoản chi](week8-screenshots/persisted.png).
 
 SHA-256 APK: `60deb60c5435cf2c15540548fddc2c5941927a676fe3e42ae3c34c4207b79347`.
+
+## Phát hành
+
+Mã nguồn pipeline: commit `45eaacb`. GitHub Release [v1.1.0](https://github.com/Kalte-Luft/vi-nho/releases/tag/v1.1.0) chứa APK và báo cáo PDF 4 trang. Digest SHA-256 GitHub trả về khớp file cục bộ; cả hai URL tải trực tiếp trả HTTP 200 khi truy cập không đăng nhập. Repository public.

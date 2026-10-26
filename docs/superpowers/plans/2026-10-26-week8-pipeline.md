@@ -19,7 +19,7 @@
 - [x] Update parser/state/database/widget coverage without running it during implementation.
 - [x] Update README/checklist, report source (architecture diagram, regex table, screenshots, limitations), release version.
 - [x] Final phase: analyze + test once, signed release build, signature check, install preserving data, one device walkthrough for OCR/review/chart/persistence and light/dark screenshots.
-- [ ] Generate and visually verify the final PDF with actual results, commit/push and upload APK + PDF to GitHub Release. Verify public links.
+- [x] Generate and visually verify the final PDF with actual results, commit/push and upload APK + PDF to GitHub Release. Verify public links.
 
 ## Review focus
 Missing or corrupt OCR metadata on old data; no writes before confirmation/cancel; persistence failure propagation; migration preserves photos/settings; notifier disposal during async work.
