@@ -1,3 +1,5 @@
+import '../models/receipt_evidence.dart';
+
 class ReceiptDraft {
   const ReceiptDraft({
     required this.merchant,
@@ -5,12 +7,14 @@ class ReceiptDraft {
     required this.date,
     required this.rawText,
     required this.warnings,
+    this.evidence,
   });
   final String merchant;
   final int? amount;
   final DateTime? date;
   final String rawText;
   final List<String> warnings;
+  final ReceiptEvidence? evidence;
 }
 
 /// Simple heuristics, deliberately not an AI service or an opaque parser.
@@ -51,7 +55,7 @@ class ReceiptParser {
     return int.tryParse(text.replaceAll(RegExp(r'[., ]'), ''));
   }
 
-  ReceiptDraft parse(String raw) {
+  ReceiptDraft parse(String raw, {ReceiptEvidence? evidence}) {
     final lines = raw
         .split('\n')
         .map((s) => s.trim())
@@ -136,6 +140,7 @@ class ReceiptParser {
       date: date,
       rawText: raw,
       warnings: warnings,
+      evidence: evidence,
     );
   }
 }

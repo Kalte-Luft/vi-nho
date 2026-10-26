@@ -3,8 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'state/app_state.dart';
-import 'ui/home_screen.dart';
-import 'ui/style.dart';
+import 'screens/home_screen.dart';
+import 'core/app_theme.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();

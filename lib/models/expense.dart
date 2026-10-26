@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'receipt_evidence.dart';
 
 enum Category {
   food('Ăn uống', Icons.restaurant_rounded, Color(0xFFEE9B62)),
@@ -27,6 +28,7 @@ class Expense {
     this.note = '',
     this.photoPath,
     this.rawText = '',
+    this.evidence,
   });
   final int? id;
   final String merchant;
@@ -36,6 +38,7 @@ class Expense {
   final String note;
   final String? photoPath;
   final String rawText;
+  final ReceiptEvidence? evidence;
 
   Map<String, Object?> toMap() => {
     if (id != null) 'id': id,
@@ -46,6 +49,7 @@ class Expense {
     'note': note,
     'photo_path': photoPath,
     'raw_text': rawText,
+    'ocr_evidence': evidence?.encode(),
   };
   factory Expense.fromMap(Map<String, Object?> map) => Expense(
     id: map['id'] as int,
@@ -56,5 +60,6 @@ class Expense {
     note: map['note'] as String,
     photoPath: map['photo_path'] as String?,
     rawText: map['raw_text'] as String,
+    evidence: ReceiptEvidence.decode(map['ocr_evidence'] as String?),
   );
 }

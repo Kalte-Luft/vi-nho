@@ -2,12 +2,13 @@
 
 Ứng dụng Flutter Android giúp quét hóa đơn và theo dõi chi tiêu cá nhân. Nhận diện chữ bằng ML Kit trên thiết bị, kiểm tra thông tin trước khi lưu, và quản lý dữ liệu bằng SQLite.
 
-**[Tải APK v1.0.0](https://github.com/Kalte-Luft/vi-nho/releases/download/v1.0.0/app-release.apk)** · Android 7.0 trở lên.
+**[Tải APK v1.1.0](https://github.com/Kalte-Luft/vi-nho/releases/download/v1.1.0/app-release.apk)** · Android 7.0 trở lên.
 
 ## Tính năng
 
 - Chụp hóa đơn hoặc chọn ảnh từ thư viện; trích xuất cửa hàng, ngày và tổng thanh toán.
-- Xem ảnh gốc, văn bản OCR và chỉnh sửa thông tin trước khi lưu.
+- Đối chiếu các khung chữ OCR trên ảnh, phóng to, sửa dữ liệu và xác nhận trước khi lưu.
+- Sau khi lưu, tự mở thống kê đúng tháng của hóa đơn và cập nhật biểu đồ.
 - Thêm thủ công, sửa và xóa khoản chi; tìm kiếm không phân biệt dấu, lọc theo tháng và danh mục.
 - Ngân sách tháng, số tiền còn lại và cảnh báo vượt ngân sách.
 - Biểu đồ donut theo danh mục và biểu đồ cột 7 ngày gần nhất, tự vẽ bằng `CustomPainter` với animation.
@@ -16,15 +17,15 @@
 
 ## Ảnh chụp màn hình
 
-Các ảnh dưới đây được chụp trên điện thoại Android 16; hóa đơn là ảnh mẫu dùng để kiểm tra OCR.
+Các ảnh dưới đây được chụp trên điện thoại Android 16, bản v1.1.0; biểu đồ gồm dữ liệu mẫu và hóa đơn mẫu dùng để kiểm tra OCR.
 
-| Tổng quan | Kiểm tra hóa đơn | Thống kê |
+| Thống kê sáng | Kiểm tra hóa đơn | Thống kê tối |
 |:---:|:---:|:---:|
-| <img src="docs/device-screenshots/08-final-overview.png" width="240" alt="Tổng quan chi tiêu và ngân sách"> | <img src="docs/device-screenshots/03-ocr-review.png" width="240" alt="Ảnh hóa đơn và thông tin OCR"> | <img src="docs/device-screenshots/10-final-weekly.png" width="240" alt="Biểu đồ chi tiêu theo tuần"> |
+| <img src="docs/week8-screenshots/light.png" width="240" alt="Tổng quan chi tiêu và ngân sách"> | <img src="docs/week8-screenshots/review.png" width="240" alt="Ảnh hóa đơn và thông tin OCR"> | <img src="docs/week8-screenshots/dark.png" width="240" alt="Biểu đồ chi tiêu theo tuần"> |
 
 ## Cài đặt APK
 
-1. Tải [app-release.apk](https://github.com/Kalte-Luft/vi-nho/releases/download/v1.0.0/app-release.apk) về điện thoại.
+1. Tải [app-release.apk](https://github.com/Kalte-Luft/vi-nho/releases/download/v1.1.0/app-release.apk) về điện thoại.
 2. Mở file và cho phép cài ứng dụng từ nguồn này khi Android yêu cầu.
 3. Mở **Ví Nhỏ**, chọn **Quét hóa đơn** và đối chiếu thông tin trước khi lưu.
 
@@ -71,13 +72,13 @@ Flutter / Dart, `image_picker`, `google_mlkit_text_recognition`, Riverpod **2.6.
 
 ```text
 lib/
-  main.dart                     Khởi tạo ứng dụng, locale và theme
-  models/expense.dart           Khoản chi, danh mục và định dạng VND
-  services/ocr_service.dart      Camera/thư viện và ML Kit Latin OCR
-  services/receipt_parser.dart   Heuristic Regex cho cửa hàng, ngày, tổng tiền
-  data/expense_repository.dart   SQLite CRUD, settings và lưu ảnh
-  state/app_state.dart           State ứng dụng qua Riverpod 2
-  ui/                           Tổng quan, lịch sử, review và biểu đồ Canvas
+  main.dart     ProviderScope, locale và theme
+  core/         Material 3 theme và màu sắc
+  models/       Expense, ReceiptEvidence và tọa độ dòng OCR
+  services/     Camera, ML Kit, Regex parser, SQLite CRUD và lưu ảnh
+  state/        AppController (NotifierProvider) + immutable AppState
+  widgets/      Biểu đồ CustomPainter, ảnh có khung OCR, expense card
+  screens/      Tổng quan, lịch sử, review và thống kê
 ```
 
 Parser ưu tiên dòng “Tổng cộng/Thanh toán/Grand total/Amount due”, bỏ qua tạm tính, tiền khách đưa và tiền thừa. Khi không đọc được một trường, ứng dụng yêu cầu người dùng kiểm tra và nhập lại. Hỗ trợ VND và ngày dạng `dd/MM/yyyy` hoặc `dd-MM-yy`; chưa hỗ trợ ngoại tệ hoặc chữ viết tay. Độ rõ của ảnh và bố cục hóa đơn ảnh hưởng kết quả OCR.
@@ -89,6 +90,20 @@ flutter analyze
 flutter test
 ```
 
-8 test kiểm tra parser, SQLite CRUD/settings, lưu ảnh, dữ liệu sau khi mở lại database và các thao tác giao diện. APK release đã cài trên thiết bị `25053RT47C` chạy Android 16: ML Kit đọc ảnh mẫu đúng **HIGHLANDS COFFEE**, **69.000 VND**, **13/10/2026**; dữ liệu và ảnh vẫn còn sau force-stop/cold start.
+Bộ kiểm thử bao phủ parser, SQLite CRUD/settings và migration v1 → v2, lưu ảnh, trạng thái bất biến, lỗi lưu dữ liệu, vòng đời notifier và xác nhận bản nháp OCR. Kết quả bản v1.1.0 và phạm vi kiểm tra trên điện thoại được ghi tại [WEEK8_VERIFICATION.md](docs/WEEK8_VERIFICATION.md).
 
-Chi tiết tại [VERIFICATION.md](docs/VERIFICATION.md). Báo cáo ngắn tại [vi-nho-w7-report.md](vi-nho-w7-report.md).
+## Luồng dữ liệu
+
+Camera/thư viện → ML Kit → Regex → **Review & xác nhận** → SQLite → `NotifierProvider` → biểu đồ `CustomPainter`.
+
+Bản nháp OCR chưa ghi vào database. Người dùng sửa cửa hàng, ngày, số tiền, danh mục và tích xác nhận sau khi đối chiếu ảnh. `AppController` chờ ghi SQLite hoàn tất rồi phát snapshot mới; màn hình thống kê cập nhật theo tháng khoản chi. Lỗi lưu giữ nguyên form để thử lại.
+
+SQLite v2 bổ sung cột nullable `ocr_evidence` (JSON kích thước ảnh và khung từng dòng chữ). Migration giữ khoản chi, ảnh và settings từ v1; hóa đơn cũ vẫn mở được dù chưa có khung OCR. Ảnh gốc và văn bản OCR được giữ để đối chiếu sau này.
+
+## Tài liệu
+
+- [Báo cáo kỹ thuật Week 8 (PDF)](docs/vi-nho-week8-report.pdf): kiến trúc, bảng Regex, ảnh sáng/tối và giới hạn.
+- [Kết quả xác minh bản v1.1.0](docs/WEEK8_VERIFICATION.md).
+- [Báo cáo Week 7](vi-nho-w7-report.md) là tài liệu của bản v1.0.0.
+
+Video demo camera hóa đơn thật sẽ được tác giả quay và bổ sung riêng.

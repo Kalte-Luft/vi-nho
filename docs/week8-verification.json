@@ -1,0 +1,32 @@
+{
+  "version": "1.1.0+2",
+  "date": "2026-10-26",
+  "apk_sha256": "60deb60c5435cf2c15540548fddc2c5941927a676fe3e42ae3c34c4207b79347",
+  "checks": [
+    [
+      "Phân tích mã",
+      "flutter analyze --no-pub: không có vấn đề."
+    ],
+    [
+      "Test tự động",
+      "15 test đạt; test review được sửa thao tác cuộn và chạy lại riêng."
+    ],
+    [
+      "Build và chữ ký",
+      "APK v1.1.0+2 build thành công; APK Signature Scheme v2, RSA 2048."
+    ],
+    [
+      "Thiết bị thật",
+      "Cài mới thành công trên Android 16. OCR ảnh mẫu: HIGHLANDS COFFEE, 69.000 VND, 13/10/2026; 17 khung chữ."
+    ],
+    [
+      "Review và biểu đồ",
+      "Nút lưu bị khóa trước xác nhận. Sau lưu: tổng tháng 478.000 → 547.000 VND; tự mở thống kê tháng 10/2026."
+    ],
+    [
+      "Mở lại / migration",
+      "Sau force-stop: khoản chi, ảnh, 17 khung OCR và theme sáng còn nguyên. Migration v1 → v2 được kiểm tra bằng SQLite test."
+    ]
+  ],
+  "video": "User will record separately"
+}

@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:vi_nho/data/expense_repository.dart';
+import 'package:vi_nho/services/expense_repository.dart';
 import 'package:vi_nho/models/expense.dart';
 
 void main() {
@@ -92,6 +92,55 @@ void main() {
       expect(await repository.setting('theme'), 'dark');
       await repository.delete(item);
       expect(await File(item.photoPath!).exists(), isFalse);
+      await db.close();
+    },
+  );
+  test(
+    'SQLite v1 to v2 migration preserves existing records and settings',
+    () async {
+      final directory = await Directory.systemTemp.createTemp(
+        'vi-nho-migration-',
+      );
+      addTearDown(() => directory.delete(recursive: true));
+      final path = '${directory.path}/old.db';
+      var db = await databaseFactoryFfi.openDatabase(
+        path,
+        options: OpenDatabaseOptions(
+          version: 1,
+          onCreate: (db, version) async {
+            await db.execute(
+              "CREATE TABLE expenses (id INTEGER PRIMARY KEY AUTOINCREMENT, merchant TEXT NOT NULL, amount INTEGER NOT NULL, date TEXT NOT NULL, category TEXT NOT NULL, note TEXT NOT NULL, photo_path TEXT, raw_text TEXT NOT NULL)",
+            );
+            await db.execute(
+              'CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)',
+            );
+          },
+        ),
+      );
+      await db.insert('expenses', {
+        'merchant': 'Old receipt',
+        'amount': 69000,
+        'date': '2026-10-13T00:00:00.000',
+        'category': 'food',
+        'note': '',
+        'photo_path': 'receipts/old.jpg',
+        'raw_text': 'Tong cong 69.000',
+      });
+      await db.insert('settings', {'key': 'theme', 'value': 'dark'});
+      await db.close();
+      db = await databaseFactoryFfi.openDatabase(
+        path,
+        options: OpenDatabaseOptions(
+          version: 2,
+          onUpgrade: ExpenseRepository.upgradeSchema,
+        ),
+      );
+      final repository = ExpenseRepository(database: db);
+      final expense = (await repository.all()).single;
+      expect(expense.amount, 69000);
+      expect(expense.photoPath, 'receipts/old.jpg');
+      expect(expense.evidence, isNull);
+      expect(await repository.setting('theme'), 'dark');
       await db.close();
     },
   );

@@ -1,70 +1,123 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../data/expense_repository.dart';
+import '../services/expense_repository.dart';
 import '../models/expense.dart';
 
 final repositoryProvider = Provider((ref) => ExpenseRepository());
-final appProvider = ChangeNotifierProvider(
-  (ref) => AppState(ref.watch(repositoryProvider)),
+final appProvider = NotifierProvider<AppController, AppState>(
+  AppController.new,
 );
 
-/// Riverpod 2 manages ownership; ChangeNotifier keeps this classroom-sized app simple.
-class AppState extends ChangeNotifier {
-  AppState(this.repository) {
-    load();
+/// Immutable UI snapshot. All mutations go through AppController.
+class AppState {
+  const AppState({
+    this.expenses = const [],
+    this.loading = true,
+    this.error,
+    this.theme = ThemeMode.system,
+    this.budget = 2000000,
+  });
+  final List<Expense> expenses;
+  final bool loading;
+  final String? error;
+  final ThemeMode theme;
+  final int budget;
+
+  AppState copyWith({
+    List<Expense>? expenses,
+    bool? loading,
+    String? error,
+    bool clearError = false,
+    ThemeMode? theme,
+    int? budget,
+  }) => AppState(
+    expenses: expenses == null ? this.expenses : List.unmodifiable(expenses),
+    loading: loading ?? this.loading,
+    error: clearError ? null : error ?? this.error,
+    theme: theme ?? this.theme,
+    budget: budget ?? this.budget,
+  );
+}
+
+class AppController extends Notifier<AppState> {
+  late ExpenseRepository _repository;
+  bool _alive = false;
+  int _loadTicket = 0;
+
+  @override
+  AppState build() {
+    _repository = ref.watch(repositoryProvider);
+    _alive = true;
+    ref.onDispose(() {
+      _alive = false;
+      _loadTicket++;
+    });
+    scheduleMicrotask(load);
+    return const AppState();
   }
-  final ExpenseRepository repository;
-  List<Expense> expenses = [];
-  bool loading = true;
-  String? error;
-  ThemeMode theme = ThemeMode.system;
-  int budget = 2000000;
 
   Future<void> load() async {
-    loading = true;
-    error = null;
-    notifyListeners();
+    if (!_alive) return;
+    final ticket = ++_loadTicket;
+    state = state.copyWith(loading: true, clearError: true);
     try {
-      expenses = await repository.all();
-      budget =
-          int.tryParse(await repository.setting('budget') ?? '') ?? 2000000;
-      theme = ThemeMode.values.byName(
-        await repository.setting('theme') ?? 'system',
+      final expenses = await _repository.all();
+      final budget = int.tryParse(await _repository.setting('budget') ?? '');
+      final themeName = await _repository.setting('theme');
+      final themes = ThemeMode.values.where((mode) => mode.name == themeName);
+      if (!_alive || ticket != _loadTicket) return;
+      state = state.copyWith(
+        expenses: expenses,
+        loading: false,
+        clearError: true,
+        budget: budget != null && budget > 0 && budget <= 999999999
+            ? budget
+            : 2000000,
+        theme: themes.isEmpty ? ThemeMode.system : themes.first,
       );
     } catch (_) {
-      error = 'Không mở được dữ liệu. Hãy thử lại.';
+      if (_alive && ticket == _loadTicket) {
+        state = state.copyWith(
+          loading: false,
+          error: 'Không mở được dữ liệu. Hãy thử lại.',
+        );
+      }
     }
-    loading = false;
-    notifyListeners();
+  }
+
+  Future<void> _refreshExpenses() async {
+    final expenses = await _repository.all();
+    if (_alive) state = state.copyWith(expenses: expenses);
   }
 
   Future<void> save(Expense expense) async {
-    await repository.save(expense);
-    expenses = await repository.all();
-    notifyListeners();
+    await _repository.save(
+      expense,
+    ); // Do not emit success before SQLite commits.
+    await _refreshExpenses();
   }
 
   Future<void> delete(Expense expense) async {
-    await repository.delete(expense);
-    expenses = await repository.all();
-    notifyListeners();
+    await _repository.delete(expense);
+    await _refreshExpenses();
   }
 
   Future<void> setBudget(int value) async {
-    await repository.setSetting('budget', '$value');
-    budget = value;
-    notifyListeners();
+    if (value < 1 || value > 999999999) {
+      throw ArgumentError.value(value, 'budget');
+    }
+    await _repository.setSetting('budget', '$value');
+    if (_alive) state = state.copyWith(budget: value);
   }
 
   Future<void> setTheme(ThemeMode value) async {
-    await repository.setSetting('theme', value.name);
-    theme = value;
-    notifyListeners();
+    await _repository.setSetting('theme', value.name);
+    if (_alive) state = state.copyWith(theme: value);
   }
 
   Future<void> samples() async {
-    await repository.addSamples();
-    expenses = await repository.all();
-    notifyListeners();
+    await _repository.addSamples();
+    await _refreshExpenses();
   }
 }

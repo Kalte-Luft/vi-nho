@@ -1,10 +1,10 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/expense.dart';
 import '../services/receipt_parser.dart';
 import '../state/app_state.dart';
-import 'style.dart';
+import '../widgets/common.dart';
+import '../widgets/receipt_photo.dart';
 
 class ReviewScreen extends ConsumerStatefulWidget {
   const ReviewScreen({super.key, this.draft, this.photoPath, this.expense});
@@ -21,6 +21,7 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
   late DateTime date;
   late Category category;
   bool saving = false;
+  bool verified = false;
   String get rawText => widget.expense?.rawText ?? widget.draft?.rawText ?? '';
   String? get photo => widget.expense?.photoPath ?? widget.photoPath;
   @override
@@ -45,11 +46,12 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
   }
 
   Future<void> save() async {
+    if (widget.draft != null && !verified) return;
     if (!form.currentState!.validate()) return;
     setState(() => saving = true);
     try {
       await ref
-          .read(appProvider)
+          .read(appProvider.notifier)
           .save(
             Expense(
               id: widget.expense?.id,
@@ -60,9 +62,10 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
               note: note.text.trim(),
               photoPath: photo,
               rawText: rawText,
+              evidence: widget.expense?.evidence ?? widget.draft?.evidence,
             ),
           );
-      if (mounted) Navigator.pop(context, true);
+      if (mounted) Navigator.pop(context, date);
     } catch (_) {
       if (mounted) {
         setState(() => saving = false);
@@ -96,8 +99,8 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
     if (confirm != true || !mounted) return;
     setState(() => saving = true);
     try {
-      await ref.read(appProvider).delete(widget.expense!);
-      if (mounted) Navigator.pop(context, true);
+      await ref.read(appProvider.notifier).delete(widget.expense!);
+      if (mounted) Navigator.pop(context, date);
     } catch (_) {
       if (mounted) {
         setState(() => saving = false);
@@ -136,66 +139,10 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                 padding: const EdgeInsets.fromLTRB(22, 10, 22, 28),
                 children: [
                   if (photo != null) ...[
-                    InkWell(
-                      borderRadius: BorderRadius.circular(22),
-                      onTap: () => showDialog<void>(
-                        context: context,
-                        builder: (context) => Dialog(
-                          child: Stack(
-                            children: [
-                              SizedBox(
-                                height: MediaQuery.sizeOf(context).height * .75,
-                                child: InteractiveViewer(
-                                  minScale: .5,
-                                  maxScale: 5,
-                                  child: Center(
-                                    child: Image.file(
-                                      File(photo!),
-                                      errorBuilder: (_, error, stack) =>
-                                          const Text('Ảnh không còn tồn tại'),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Positioned(
-                                right: 8,
-                                top: 8,
-                                child: IconButton.filledTonal(
-                                  onPressed: () => Navigator.pop(context),
-                                  icon: const Icon(Icons.close),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(22),
-                        child: Stack(
-                          children: [
-                            Image.file(
-                              File(photo!),
-                              height: 190,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, error, stack) => const SizedBox(
-                                height: 100,
-                                child: Center(
-                                  child: Text('Ảnh không còn tồn tại'),
-                                ),
-                              ),
-                            ),
-                            Positioned(
-                              right: 12,
-                              bottom: 12,
-                              child: Chip(
-                                avatar: const Icon(Icons.zoom_in, size: 18),
-                                label: const Text('Xem ảnh gốc'),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                    ReceiptPhoto(
+                      path: photo!,
+                      evidence:
+                          widget.expense?.evidence ?? widget.draft?.evidence,
                     ),
                     const SizedBox(height: 20),
                   ],
@@ -333,8 +280,29 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                     ),
                   ],
                   const SizedBox(height: 22),
+                  if (widget.draft != null)
+                    CheckboxListTile(
+                      key: const ValueKey('verify-ocr'),
+                      contentPadding: EdgeInsets.zero,
+                      value: verified,
+                      onChanged: saving
+                          ? null
+                          : (value) =>
+                                setState(() => verified = value ?? false),
+                      controlAffinity: ListTileControlAffinity.leading,
+                      title: const Text(
+                        'Tôi đã đối chiếu cửa hàng, ngày và tổng tiền',
+                        style: TextStyle(fontSize: 13),
+                      ),
+                      subtitle: const Text(
+                        'Sửa dữ liệu OCR sai trước khi xác nhận.',
+                        style: TextStyle(fontSize: 11),
+                      ),
+                    ),
                   FilledButton.icon(
-                    onPressed: saving ? null : save,
+                    onPressed: saving || (widget.draft != null && !verified)
+                        ? null
+                        : save,
                     icon: saving
                         ? const SizedBox(
                             width: 18,

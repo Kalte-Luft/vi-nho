@@ -17,7 +17,8 @@ class ExpenseRepository {
     final directory = await documentsDirectory;
     _database = await openDatabase(
       p.join(directory.path, 'vi_nho.db'),
-      version: 1,
+      version: 2,
+      onUpgrade: upgradeSchema,
       onCreate: createSchema,
     );
     return _database!;
@@ -28,10 +29,20 @@ class ExpenseRepository {
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           merchant TEXT NOT NULL, amount INTEGER NOT NULL CHECK(amount > 0),
           date TEXT NOT NULL, category TEXT NOT NULL, note TEXT NOT NULL,
-          photo_path TEXT, raw_text TEXT NOT NULL)''');
+          photo_path TEXT, raw_text TEXT NOT NULL, ocr_evidence TEXT)''');
     await db.execute(
       'CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)',
     );
+  }
+
+  static Future<void> upgradeSchema(
+    Database db,
+    int oldVersion,
+    int newVersion,
+  ) async {
+    if (oldVersion < 2) {
+      await db.execute('ALTER TABLE expenses ADD COLUMN ocr_evidence TEXT');
+    }
   }
 
   Future<List<Expense>> all() async => (await (await database).query(

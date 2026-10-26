@@ -6,7 +6,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vi_nho/main.dart';
-import 'package:vi_nho/data/expense_repository.dart';
+import 'package:vi_nho/services/expense_repository.dart';
 import 'package:vi_nho/models/expense.dart';
 import 'package:vi_nho/state/app_state.dart';
 
@@ -121,7 +121,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('Bắt đầu từ hóa đơn đầu tiên'), findsOneWidget);
-      await container.read(appProvider).samples();
+      await container.read(appProvider.notifier).samples();
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
       await screenshot(tester, '01-overview');
@@ -173,6 +173,8 @@ void main() {
       await tester.tap(find.text('Xác nhận & lưu'));
       await tester.pumpAndSettle();
       expect(repository.values.first.amount, 50000);
+      await tester.tap(find.text('Sổ chi tiêu'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Cà phê VKU'));
       await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('Xóa khoản chi'));

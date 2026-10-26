@@ -42,7 +42,7 @@ void main() {
     expect(ReceiptParser.parseAmount('45 000 VND'), 45000);
     expect(ReceiptParser.parseAmount('45,000.00'), 45000);
     expect(ReceiptParser.parseAmount('45,000.50'), isNull);
-      expect(ReceiptParser.parseAmount('-45000'), isNull);
-      expect(ReceiptParser.parseAmount('abc45000'), isNull);
+    expect(ReceiptParser.parseAmount('-45000'), isNull);
+    expect(ReceiptParser.parseAmount('abc45000'), isNull);
   });
 }
